@@ -1,23 +1,28 @@
 package com.github.bohunn.proto;
 
+import jakarta.inject.Singleton;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import jakarta.enterprise.context.ApplicationScoped;
+
+import java.nio.file.Paths;
 
 
-@ApplicationScoped
+@Singleton
 public class GitHandler {
 
     @ConfigProperty(name = "github.repository.url")
-    private String githubRepositoryUrl;
+    String githubRepositoryUrl;
 
     @ConfigProperty(name = "github.username")
-    private String githubUsername;
+    String githubUsername;
 
     @ConfigProperty(name = "github.password")
-    private String githubPassword;
+    String githubPassword;
 
 
-    public void commitProtobufs() {
+    public void commitProtobufs() throws GitAPIException {
         Git git = Git.cloneRepository()
             .setURI(githubRepositoryUrl)
             .setDirectory(Paths.get("/model").toFile())

@@ -1,9 +1,13 @@
 # Stage 1 : Build with Gradle
-FROM gradle:7.6.1-jdk17-alpine as build
+#FROM openjdk:17.0.1-jdk-slim as build
+FROM gradle:8.1-jdk17-alpine as build
 
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle build --no-daemon
+WORKDIR /app
+
+COPY . /app
+
+# Build the application
+RUN gradle build
 
 # Stage 2 : Create the docker final image
 FROM openjdk:17.0.1-jdk-slim

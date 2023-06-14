@@ -1,17 +1,19 @@
 package com.github.bohunn.proto;
 
-import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
-import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowSet;
+import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.jgit.api.errors.GitAPIException;
+import jakarta.xml.bind.DatatypeConverter;
+import org.jboss.logging.Logger;
 
 import java.io.BufferedReader;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,43 +22,68 @@ import java.util.stream.StreamSupport;
 @ApplicationScoped
 public class ProtobufProcessor {
 
+    private static final Logger LOGGER = Logger.getLogger(ProtobufProcessor.class);
+
     @Inject
     PgPool client;
 
-    @ConsumeEvent(value = "process-protobufs", blocking = true)
-    public void process(String message) throws IOException, GitAPIException {
-        client.query("SELECT obj_type, protobuf FROM public.protobuf_table").execute()
+
+    public void loadProtoFromDb() {
+        client.query("SELECT obj_type_id FROM public.code_bde_entity WHERE active = '+'").execute()
                 .onItem().transformToMulti(rowSet ->
                         Multi.createFrom().items(() ->
                                 StreamSupport.stream(rowSet.spliterator(), false)))
                 .subscribe().with(row -> {
-                    try {
-                        processRow(row);
-                    } catch (Exception e) {
-                        // Log or handle exception
-                    }
+                    String objTypeId = row.getString("obj_type_id");
+                    getSchema(objTypeId).subscribe().with(schema -> {
+                        try {
+                            processRow(objTypeId, schema.getBytes(StandardCharsets.UTF_8));
+                        } catch (IOException e) {
+                            LOGGER.errorf(e, "Error processing obj_type_id: %s", objTypeId);
+                        }
+                    });
                 });
     }
-    private void processRow(Row row) throws IOException, GitAPIException {
-        String objType = row.getString("obj_type");
-        byte[] protobuf = row.getBuffer("protobuf").getBytes();
 
+    private Uni<String> getSchema(String objTypeId) {
+        return client.preparedQuery("SELECT get_schema($1)").execute(Tuple.of(objTypeId))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? iterator.next().getString(0) : null);
+    }
+
+    private void processRow(String objType, byte[] protobufHex) throws IOException {
+        String protobufStr = new String(DatatypeConverter.parseHexBinary(new String(protobufHex, StandardCharsets.UTF_8).substring(2)), StandardCharsets.UTF_8);
         String tempDirectory;
         if (System.getProperty("os.name").startsWith("Windows")) {
-            // App is running on Windows, use project directory for /temp
             tempDirectory = System.getProperty("user.dir");
         } else {
-            // App is running on Linux, use root path for /temp
             tempDirectory = "/";
         }
 
         Path protoFilePath = Paths.get(tempDirectory, "temp", objType + ".proto");
-        Files.createDirectories(protoFilePath.getParent());
-        try (FileOutputStream fileOutputStream = new FileOutputStream(protoFilePath.toFile())) {
-            fileOutputStream.write(protobuf);
-        }
+        LOGGER.infof("Creating a .proto file: %s", objType);
 
-        Process p = new ProcessBuilder("protoc", "--java_out=" + tempDirectory, protoFilePath.toString()).start();
+        Files.createDirectories(protoFilePath.getParent());
+
+        Files.write(protoFilePath, protobufStr.getBytes(StandardCharsets.UTF_8));
+
+        Path tempDirPath;
+        Path tempJavaPath;
+        String protoFileName = protoFilePath.getFileName().toString();
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            // In Windows, replace the backslashes in the path string with forward slashes for protoc
+            tempDirPath = Paths.get(protoFilePath.getParent().toString().replace("\\", "/")).toAbsolutePath();
+            tempJavaPath = Paths.get(protoFilePath.getParent().toString().replace("\\", "/"), "model").toAbsolutePath();
+        } else {
+            // In Unix-based systems, just use the path as is
+            tempDirPath = protoFilePath.getParent().toAbsolutePath();
+            tempJavaPath = Paths.get(protoFilePath.getParent().toString(), "model").toAbsolutePath();
+        }
+        // create a model directory for the generated Java class
+        Files.createDirectories(tempJavaPath);
+
+        LOGGER.infof("Creating a Java class...");
+        Process p = new ProcessBuilder("protoc", "-I=" + tempDirPath, "--java_out=" + tempJavaPath, protoFileName).start();
 
         try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
              BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
@@ -71,13 +98,6 @@ public class ProtobufProcessor {
             }
         }
 
-
-//        Git git = Git.open(Paths.get(protoFilePath.getRoot().toString()).toFile());
-//        git.add().addFilepattern(".").call();
-//        git.commit().setMessage("Commit message").call();
-//        git.push()
-//                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("username", "password"))
-//                .call();
     }
 }
 

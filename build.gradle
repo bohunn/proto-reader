@@ -13,6 +13,8 @@ dependencies {
     implementation 'io.quarkus:quarkus-arc'
     implementation("io.quarkus:quarkus-reactive-routes:${quarkusPlatformVersion}")
     implementation("io.quarkus:quarkus-reactive-pg-client")
+    implementation("io.quarkus:quarkus-resteasy-reactive")
+    implementation("io.quarkus:quarkus-rest-client")
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.9.0.202009080501-r'
     testImplementation 'io.quarkus:quarkus-junit5'
 }
