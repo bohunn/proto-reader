@@ -8,6 +8,8 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.xml.bind.DatatypeConverter;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import java.io.BufferedReader;
@@ -27,9 +29,16 @@ public class ProtobufProcessor {
     @Inject
     PgPool client;
 
+    private String getQuery(String queryName) {
+        Config config = ConfigProvider.getConfig();
+        String dbType = config.getValue("db.type", String.class);
+        return config.getValue(dbType + ".sql." + queryName, String.class);
+    }
 
     public void loadProtoFromDb() {
-        client.query("SELECT obj_type_id FROM public.code_bde_entity WHERE active = '+'").execute()
+        String query1 = getQuery("query1");
+
+        client.query(query1).execute()
                 .onItem().transformToMulti(rowSet ->
                         Multi.createFrom().items(() ->
                                 StreamSupport.stream(rowSet.spliterator(), false)))
@@ -46,7 +55,9 @@ public class ProtobufProcessor {
     }
 
     private Uni<String> getSchema(String objTypeId) {
-        return client.preparedQuery("SELECT get_schema($1)").execute(Tuple.of(objTypeId))
+        String query2 = getQuery("query2");
+
+        return client.preparedQuery(query2).execute(Tuple.of(objTypeId))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? iterator.next().getString(0) : null);
     }
@@ -65,7 +76,7 @@ public class ProtobufProcessor {
 
         Files.createDirectories(protoFilePath.getParent());
 
-        Files.write(protoFilePath, protobufStr.getBytes(StandardCharsets.UTF_8));
+        Files.writeString(protoFilePath, protobufStr);
 
         Path tempDirPath;
         Path tempJavaPath;
@@ -100,4 +111,3 @@ public class ProtobufProcessor {
 
     }
 }
-
