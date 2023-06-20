@@ -6,6 +6,8 @@ WORKDIR /app
 
 COPY . /app
 
+RUN ls -al /app
+
 # Build the application
 RUN gradle build
 
@@ -25,10 +27,10 @@ ENV PATH="$PATH:/usr/local/bin"
 ENV LANGUAGE='en_US:en'
 
 # Copy artifacts from build stage
-COPY --from=build /home/gradle/src/build/quarkus-app/lib/ /deployments/lib/
-COPY --from=build /home/gradle/src/build/quarkus-app/*.jar /deployments/
-COPY --from=build /home/gradle/src/build/quarkus-app/app/ /deployments/app/
-COPY --from=build /home/gradle/src/build/quarkus-app/quarkus/ /deployments/quarkus/
+COPY --from=build /app/build/quarkus-app/lib/ /deployments/lib/
+COPY --from=build /app/build/quarkus-app/*.jar /deployments/
+COPY --from=build /app/build/quarkus-app/app/ /deployments/app/
+COPY --from=build /app/build/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8090
 USER 185
