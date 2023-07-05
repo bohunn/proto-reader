@@ -38,6 +38,12 @@ public class ProtobufProcessor {
     public void loadProtoFromDb() {
         String query1 = getQuery("query1");
 
+        try{
+            moveProtoFiles();
+        } catch (IOException e) {
+            LOGGER.errorf(e, "Error moving proto files");
+        }
+
         client.query(query1).execute()
                 .onItem().transformToMulti(rowSet ->
                         Multi.createFrom().items(() ->
@@ -109,5 +115,32 @@ public class ProtobufProcessor {
             }
         }
 
+    }
+
+    // method to move meta_model.proto and options.proto from resources folder to model folder
+    public void moveProtoFiles() throws IOException {
+        String tempDirectory;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            tempDirectory = System.getProperty("user.dir");
+        } else {
+            tempDirectory = "/";
+        }
+
+        Path protoFilePath = Paths.get(tempDirectory, "temp", "meta_model.proto");
+        Path protoFilePath2 = Paths.get(tempDirectory, "temp", "options.proto");
+        Path tempJavaPath;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            // In Windows, replace the backslashes in the path string with forward slashes for protoc
+            tempJavaPath = Paths.get(protoFilePath.getParent().toString().replace("\\", "/"), "model").toAbsolutePath();
+        } else {
+            // In Unix-based systems, just use the path as is
+            tempJavaPath = Paths.get(protoFilePath.getParent().toString(), "model").toAbsolutePath();
+        }
+        // create a model directory for the generated Java class
+        Files.createDirectories(tempJavaPath);
+
+        LOGGER.infof("Moving meta_model.proto and options.proto to model folder...");
+        Files.move(protoFilePath, Paths.get(tempJavaPath.toString(), "meta_model.proto"));
+        Files.move(protoFilePath2, Paths.get(tempJavaPath.toString(), "options.proto"));
     }
 }
