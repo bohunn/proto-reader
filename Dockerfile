@@ -22,6 +22,8 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/p
 # Unzip protoc
 RUN unzip protoc-3.19.4-linux-x86_64.zip -d /usr/local
 
+RUN mkdir /temp && chown -R 185:0 /temp && chmod -R g+rwX /temp
+
 ENV PATH="$PATH:/usr/local/bin"
 
 ENV LANGUAGE='en_US:en'
