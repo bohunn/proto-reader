@@ -34,5 +34,6 @@ COPY --from=build /app/build/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8090
 USER 185
+ENV _JAVA_OPTIONS "-Djava.util.prefs.userRoot=/tmp"
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
