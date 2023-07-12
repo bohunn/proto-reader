@@ -33,6 +33,8 @@ COPY --from=build /app/build/quarkus-app/lib/ /deployments/lib/
 COPY --from=build /app/build/quarkus-app/*.jar /deployments/
 COPY --from=build /app/build/quarkus-app/app/ /deployments/app/
 COPY --from=build /app/build/quarkus-app/quarkus/ /deployments/quarkus/
+#COPY meta_model and options proto files
+COPY --from=build /app/build/resources/main/*.proto /temp/
 
 EXPOSE 8090
 USER 185
