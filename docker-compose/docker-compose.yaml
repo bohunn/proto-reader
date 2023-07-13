@@ -35,3 +35,9 @@ services:
       - SCHEMA_REGISTRY_HOST_NAME=localhost
     depends_on:
       - kafka
+
+  proto-reader:
+    image: bohunn/proto-reader:0.0.1
+    ports:
+      - '8090:8090'
+

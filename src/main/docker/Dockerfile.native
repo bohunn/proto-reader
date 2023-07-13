@@ -2,7 +2,6 @@
 # This Dockerfile is used in order to build a container that runs the Quarkus application in native (no JVM) mode.
 #
 # Before building the container image run:
-#
 # ./gradlew build -Dquarkus.package.type=native
 #
 # Then, build the image with:
