@@ -1,7 +1,6 @@
 package com.github.bohunn.proto;
 
 import io.agroal.api.AgroalDataSource;
-import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.xml.bind.DatatypeConverter;
@@ -16,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.*;
-import java.util.concurrent.CompletableFuture;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @ApplicationScoped
 public class ProtobufProcessor {
@@ -36,66 +37,42 @@ public class ProtobufProcessor {
     public void loadProtoFromDb() {
         String query1 = getQuery("query1");
 
-        try{
+        try {
             moveProtoFiles();
         } catch (IOException e) {
             LOGGER.errorf(e, "Error moving proto files");
         }
 
-        try (Connection connection = dataSource.getConnection()) {
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query1);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query1);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
             while (resultSet.next()) {
                 String objTypeId = resultSet.getString("obj_type_id");
-                getSchema(objTypeId).subscribe().with(schema -> {
-                    try {
-                        processRow(objTypeId, schema.getBytes(StandardCharsets.UTF_8));
-                    } catch (IOException e) {
-                        LOGGER.errorf(e, "Error processing obj_type_id: %s", objTypeId);
-                    }
-                });
+                String schema = getSchema(objTypeId);
+                processRow(objTypeId, schema.getBytes(StandardCharsets.UTF_8));
             }
-        } catch (Exception e) {
-            LOGGER.errorf(e, "Error setting search_path");
+
+        } catch (SQLException | IOException e) {
+            LOGGER.errorf(e, "Error processing the query");
         }
     }
 
-    private Uni<String> getSchema(String objTypeId) {
+    private String getSchema(String objTypeId) throws SQLException {
         String query2 = getQuery("query2");
 
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query2)) {
 
-            return Uni.createFrom().completionStage(() ->
-                    {
-                        PreparedStatement ps = null;
-                        try {
-                            ps = connection.prepareStatement(query2);
-                            ps.setString(1, objTypeId);
-                            ResultSet rs = ps.executeQuery();
-                            if (rs.next()) {
-                                return CompletableFuture.completedFuture(rs.getString(0));
-                            } else {
-                                return CompletableFuture.completedFuture(null);
-                            }
-                        } catch (SQLException e) {
-                            throw new RuntimeException(e);
-                        } finally {
-                            try {
-                                if (ps != null) {
-                                    ps.close();
-                                }
-                                connection.close();
-                            } catch (SQLException e) {
-                                // Handle exception
-                            }
-                        }
-
-                    });
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            preparedStatement.setString(1, objTypeId);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString(1);
+                } else {
+                    return null;
+                }
+            }
         }
     }
-
 
     private void processRow(String objType, byte[] protobufHex) throws IOException {
         String protobufStr = new String(DatatypeConverter.parseHexBinary(new String(protobufHex, StandardCharsets.UTF_8).substring(2)), StandardCharsets.UTF_8);
