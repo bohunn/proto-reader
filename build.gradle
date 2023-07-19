@@ -18,7 +18,7 @@ dependencies {
     implementation("io.quarkus:quarkus-resteasy-reactive")
     implementation("io.quarkus:quarkus-rest-client")
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.6.0.202305301015-r")
-    implementation("com.oracle.database.jdbc:ojdbc8:19.19.0.0")
+    implementation("com.oracle.database.jdbc:ojdbc8:23.2.0.0")
     testImplementation 'io.quarkus:quarkus-junit5'
 }
 
