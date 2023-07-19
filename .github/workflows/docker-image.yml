@@ -27,7 +27,7 @@ jobs:
           docker buildx build \
             --platform linux/amd64 \
             --tag "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" \
-            --load
+            --load .
         env:
           DOCKER_IMAGE_TAG: ${{ steps.commit_id.outputs.commit_id }}
 
