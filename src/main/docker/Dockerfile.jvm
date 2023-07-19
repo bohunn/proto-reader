@@ -1,5 +1,5 @@
 # Stage 1 : Build with Gradle
-FROM gradle:7.6.1-jdk17-alpine as build
+FROM gradle:7.6.2-jdk17-alpine as build
 
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
