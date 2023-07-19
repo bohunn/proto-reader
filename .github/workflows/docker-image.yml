@@ -3,7 +3,7 @@ name: Build and Publish Docker Image
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build-and-publish:
@@ -22,12 +22,14 @@ jobs:
 
       - name: Build and tag Docker image
         run: |
-          DOCKER_IMAGE_NAME="***/proto-reader"
-          DOCKER_IMAGE_TAG=$GITHUB_SHA
+          DOCKER_IMAGE_NAME="bohunn/proto-reader"
+          DOCKER_IMAGE_TAG=${{ steps.commit_id.outputs.commit_id }}
           docker buildx build \
             --platform linux/amd64 \
             --tag "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG" \
-            .
+            --load
+        env:
+          DOCKER_IMAGE_TAG: ${{ steps.commit_id.outputs.commit_id }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
@@ -37,6 +39,8 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          DOCKER_IMAGE_NAME="***/proto-reader"
-          DOCKER_IMAGE_TAG=$GITHUB_SHA
+          DOCKER_IMAGE_NAME="bohunn/proto-reader"
+          DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}
           docker push "$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
+        env:
+          DOCKER_IMAGE_TAG: ${{ steps.commit_id.outputs.commit_id }}
