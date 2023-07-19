@@ -11,10 +11,14 @@ import org.jboss.logging.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Types;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -59,17 +63,30 @@ public class ProtobufProcessor {
 
     private String getSchema(String objTypeId) throws SQLException {
         String query2 = getQuery("query2");
-
+    
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query2)) {
-
-            preparedStatement.setString(1, objTypeId);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getString(1);
-                } else {
+             CallableStatement callableStatement = connection.prepareCall(query2)) {
+    
+            callableStatement.setString(1, objTypeId);
+            callableStatement.registerOutParameter(2, Types.CLOB);
+            callableStatement.execute();
+    
+            Clob clob = callableStatement.getClob(2);
+            if (clob != null) {
+                try (Reader reader = clob.getCharacterStream()) {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    char[] buffer = new char[1024];
+                    int bytesRead;
+                    while ((bytesRead = reader.read(buffer)) != -1) {
+                        stringBuilder.append(buffer, 0, bytesRead);
+                    }
+                    return stringBuilder.toString();
+                } catch (IOException e) {
+                    LOGGER.errorf(e, "Error reading the CLOB");
                     return null;
                 }
+            } else {
+                return null;
             }
         }
     }
