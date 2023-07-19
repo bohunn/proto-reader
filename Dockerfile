@@ -1,6 +1,6 @@
 # Stage 1 : Build with Gradle
 #FROM openjdk:17.0.1-jdk-slim as build
-FROM gradle:8.1-jdk17-alpine as build
+FROM gradle:8.2-jdk17-alpine as build
 
 WORKDIR /app
 
