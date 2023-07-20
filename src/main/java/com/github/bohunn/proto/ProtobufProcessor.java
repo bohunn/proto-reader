@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,9 +67,11 @@ public class ProtobufProcessor {
         String query2 = getQuery("query2");
     
         try (Connection connection = dataSource.getConnection();
-             CallableStatement callableStatement = connection.prepareCall(query2)) {
-    
-            callableStatement.setInt(1, Integer.parseInt(objTypeId));
+            CallableStatement callableStatement = connection.prepareCall(query2)) {
+
+            BigInteger objTypeIdBigInt = new BigInteger(objTypeId);
+
+            callableStatement.setObject(1, objTypeIdBigInt, Types.NUMERIC);
             callableStatement.registerOutParameter(1, Types.CLOB);
             callableStatement.execute();
     
