@@ -12,18 +12,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Types;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 @ApplicationScoped
 public class ProtobufProcessor {
@@ -65,16 +58,14 @@ public class ProtobufProcessor {
 
     private String getSchema(String objTypeId) throws SQLException {
         String query2 = getQuery("query2");
-    
+
         try (Connection connection = dataSource.getConnection();
-            CallableStatement callableStatement = connection.prepareCall(query2)) {
+             CallableStatement callableStatement = connection.prepareCall(query2)) {
 
-            BigInteger objTypeIdBigInt = new BigInteger(objTypeId);
-
-            callableStatement.setObject(1, objTypeIdBigInt, Types.NUMERIC);
+            callableStatement.setInt(1, Integer.parseInt(objTypeId));
             callableStatement.registerOutParameter(1, Types.CLOB);
             callableStatement.execute();
-    
+
             Clob clob = callableStatement.getClob(1);
             if (clob != null) {
                 try (Reader reader = clob.getCharacterStream()) {
@@ -86,8 +77,7 @@ public class ProtobufProcessor {
                     }
                     return stringBuilder.toString();
                 } catch (IOException e) {
-                    LOGGER.errorf(e, "Error reading the CLOB");
-                    return null;
+                    throw new SQLException(e);
                 }
             } else {
                 return null;
