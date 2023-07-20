@@ -12,7 +12,6 @@ dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation 'io.quarkus:quarkus-arc'
     implementation("io.quarkus:quarkus-reactive-routes:${quarkusPlatformVersion}")
-    implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-jdbc-oracle")
     implementation("io.quarkus:quarkus-agroal:${quarkusPlatformVersion}")
     implementation("io.quarkus:quarkus-resteasy-reactive")
