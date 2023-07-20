@@ -68,7 +68,7 @@ public class ProtobufProcessor {
         try (Connection connection = dataSource.getConnection();
              CallableStatement callableStatement = connection.prepareCall(query2)) {
     
-            callableStatement.setString(1, objTypeId);
+            callableStatement.setInt(1, Integer.parseInt(objTypeId));
             callableStatement.registerOutParameter(1, Types.CLOB);
             callableStatement.execute();
     
