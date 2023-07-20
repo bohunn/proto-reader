@@ -53,6 +53,7 @@ public class ProtobufProcessor {
             while (resultSet.next()) {
                 String objTypeId = resultSet.getString("obj_type_id");
                 String schema = getSchema(objTypeId);
+                assert schema != null;
                 processRow(objTypeId, schema.getBytes(StandardCharsets.UTF_8));
             }
 
@@ -68,10 +69,10 @@ public class ProtobufProcessor {
              CallableStatement callableStatement = connection.prepareCall(query2)) {
     
             callableStatement.setString(1, objTypeId);
-            callableStatement.registerOutParameter(2, Types.CLOB);
+            callableStatement.registerOutParameter(1, Types.CLOB);
             callableStatement.execute();
     
-            Clob clob = callableStatement.getClob(2);
+            Clob clob = callableStatement.getClob(1);
             if (clob != null) {
                 try (Reader reader = clob.getCharacterStream()) {
                     StringBuilder stringBuilder = new StringBuilder();
