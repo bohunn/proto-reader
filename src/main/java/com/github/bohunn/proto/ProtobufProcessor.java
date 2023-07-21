@@ -3,7 +3,6 @@ package com.github.bohunn.proto;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.xml.bind.DatatypeConverter;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
@@ -12,7 +11,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,49 +42,55 @@ public class ProtobufProcessor {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query1);
              ResultSet resultSet = preparedStatement.executeQuery()) {
-            while (resultSet.next()) {
-                String objTypeId = resultSet.getString("obj_type_id");
-                String schema = getSchema(objTypeId);
-                assert schema != null;
-                processRow(objTypeId, schema.getBytes(StandardCharsets.UTF_8));
-            }
 
+            while (resultSet.next()) {
+                int objTypeId = resultSet.getInt("obj_type_id");
+                String schema = getSchema(objTypeId);
+                if (schema != null) {
+                    processRow(objTypeId, schema); // Pass the schema directly as a string
+                } else {
+                    LOGGER.errorf("Schema not found for obj_type_id: %d", objTypeId);
+                }
+            }
         } catch (SQLException | IOException e) {
             LOGGER.errorf(e, "Error processing the query");
         }
     }
 
-    private String getSchema(String objTypeId) throws SQLException {
-        String query2 = getQuery("query2");
+
+    private String getSchema(int objTypeId) throws SQLException {
+        String query = getQuery("query2");
+        String clobValue = null;
 
         try (Connection connection = dataSource.getConnection();
-             CallableStatement callableStatement = connection.prepareCall(query2)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
-            callableStatement.setInt(1, Integer.parseInt(objTypeId));
-            callableStatement.registerOutParameter(1, Types.CLOB);
-            callableStatement.execute();
+            preparedStatement.setInt(1, objTypeId);
 
-            Clob clob = callableStatement.getClob(1);
-            if (clob != null) {
-                try (Reader reader = clob.getCharacterStream()) {
-                    StringBuilder stringBuilder = new StringBuilder();
-                    char[] buffer = new char[1024];
-                    int bytesRead;
-                    while ((bytesRead = reader.read(buffer)) != -1) {
-                        stringBuilder.append(buffer, 0, bytesRead);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    Clob clob = resultSet.getClob("clob");
+                    if (clob != null) {
+                        try (Reader reader = clob.getCharacterStream()) {
+                            StringBuilder stringBuilder = new StringBuilder();
+                            char[] buffer = new char[1024];
+                            int bytesRead;
+                            while ((bytesRead = reader.read(buffer)) != -1) {
+                                stringBuilder.append(buffer, 0, bytesRead);
+                            }
+                            clobValue = stringBuilder.toString();
+                        } catch (IOException e) {
+                            throw new SQLException(e);
+                        }
                     }
-                    return stringBuilder.toString();
-                } catch (IOException e) {
-                    throw new SQLException(e);
                 }
-            } else {
-                return null;
             }
         }
+
+        return clobValue;
     }
 
-    private void processRow(String objType, byte[] protobufHex) throws IOException {
-        String protobufStr = new String(DatatypeConverter.parseHexBinary(new String(protobufHex, StandardCharsets.UTF_8).substring(2)), StandardCharsets.UTF_8);
+    private void processRow(int objType, String schema) throws IOException {
         String tempDirectory;
         if (System.getProperty("os.name").startsWith("Windows")) {
             tempDirectory = System.getProperty("user.dir");
@@ -99,7 +103,7 @@ public class ProtobufProcessor {
 
         Files.createDirectories(protoFilePath.getParent());
 
-        Files.writeString(protoFilePath, protobufStr);
+        Files.writeString(protoFilePath, schema);
 
         Path tempDirPath;
         Path tempJavaPath;
@@ -131,7 +135,6 @@ public class ProtobufProcessor {
                 System.err.println(s);
             }
         }
-
     }
 
     // method to move meta_model.proto and options.proto from resources folder to model folder
