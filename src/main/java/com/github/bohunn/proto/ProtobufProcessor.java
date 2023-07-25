@@ -33,11 +33,11 @@ public class ProtobufProcessor {
     public void loadProtoFromDb() {
         String query1 = getQuery("query1");
 
-        try {
-            moveProtoFiles();
-        } catch (IOException e) {
-            LOGGER.errorf(e, "Error moving proto files");
-        }
+        // try {
+            // moveProtoFiles();
+        // } catch (IOException e) {
+            // LOGGER.errorf(e, "Error moving proto files");
+        // }
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query1);
