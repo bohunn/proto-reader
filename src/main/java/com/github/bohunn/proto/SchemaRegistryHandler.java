@@ -54,6 +54,7 @@ public class SchemaRegistryHandler {
     // TODO: write a test that checks the schema registry naming etc.    
     private void uploadProtoFileSchema(String filename) {
         //method to upload the .proto file schema to the schema registry
+        Client client = ClientBuilder.newClient();
         String tempDirectory;
         if (System.getProperty("os.name").startsWith("Windows")) {
             tempDirectory = System.getProperty("user.dir");
