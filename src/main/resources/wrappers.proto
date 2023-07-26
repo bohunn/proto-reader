@@ -40,7 +40,8 @@
 
 syntax = "proto3";
 
-package google.protobuf;
+// package google.protobuf;
+package com.avaloq.acp.bde.protobuf;
 
 option cc_enable_arenas = true;
 option go_package = "google.golang.org/protobuf/types/known/wrapperspb";
@@ -72,6 +73,13 @@ message FloatValue {
 message Int64Value {
   // The int64 value.
   int64 value = 1;
+}
+
+// Wrapper message for `sint64`
+//
+// The Json representation for `SInt64Value` is JSON string.
+message SInt64Value {
+  sint64 value = 1;
 }
 
 // Wrapper message for `uint64`.
