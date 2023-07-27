@@ -11,6 +11,17 @@ services:
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=test
 
+  proto-reader:
+    image: bohunn/proto-reader:9306a49
+    hostname: proto-reader
+    ports:
+      - '8090:8090'
+    volumes:
+      - ./proto:/app/config
+    environment:
+      - QUARKUS_PROFILE=dev
+      - QUARKUS_CONFIG_LOCATIONS=/app/config/application.properties
+
   zookeeper:
     image: wurstmeister/zookeeper
     ports:
@@ -52,11 +63,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
-  proto-reader:
-    image: bohunn/proto-reader:0.0.1
-    ports:
-      - '8090:8090'
 
 volumes:
   oracle-data:

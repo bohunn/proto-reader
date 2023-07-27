@@ -33,11 +33,11 @@ public class ProtobufProcessor {
     public void loadProtoFromDb() {
         String query1 = getQuery("query1");
 
-        // try {
-            // moveProtoFiles();
-        // } catch (IOException e) {
-            // LOGGER.errorf(e, "Error moving proto files");
-        // }
+//         try {
+//             moveProtoFiles();
+//         } catch (IOException e) {
+//             LOGGER.errorf(e, "Error moving proto files");
+//         }
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query1);
@@ -56,7 +56,6 @@ public class ProtobufProcessor {
             LOGGER.errorf(e, "Error processing the query");
         }
     }
-
 
     private String getSchema(int objTypeId) throws SQLException {
         String query = getQuery("query2");
@@ -120,20 +119,26 @@ public class ProtobufProcessor {
         // create a model directory for the generated Java class
         Files.createDirectories(tempJavaPath);
 
-        LOGGER.infof("Creating a Java class...");
-        Process p = new ProcessBuilder("protoc", "-I=" + tempDirPath, "--java_out=" + tempJavaPath, protoFileName).start();
+        try {
+            LOGGER.infof("Creating a Java class...");
+            Process p = new ProcessBuilder("protoc", "-I=" + tempDirPath, "--java_out=" + tempJavaPath, protoFileName).start();
 
-        try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+            try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                 BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
 
-            String s;
-            while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
+                String s;
+                while ((s = stdInput.readLine()) != null) {
+                    System.out.println(s);
+                }
+
+                while ((s = stdError.readLine()) != null) {
+                    System.err.println(s);
+                }
+            } catch (Exception e) {
+                LOGGER.errorf(e, "Error creating a Java class");
             }
-
-            while ((s = stdError.readLine()) != null) {
-                System.err.println(s);
-            }
+        } catch (Exception e) {
+            LOGGER.errorf(e, "Error creating a Java class");
         }
     }
 
