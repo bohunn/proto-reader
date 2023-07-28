@@ -70,11 +70,13 @@ public class SchemaRegistryHandler {
                 }
             } catch (IOException e) {
                 LOGGER.errorf(e, "Error creating temp directory");
+            } finally {
+                client.close();
             }
         }
     }
 
-    private String includeWrappersProto(String schema) {
+    public String includeWrappersProto(String schema) {
         // method to include wrappers.proto in the schema
         String tempDirectory;
         if (System.getProperty("os.name").startsWith("Windows")) {

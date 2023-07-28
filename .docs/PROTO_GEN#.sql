@@ -12,7 +12,11 @@ create or replace PACKAGE proto_gen# IS
 
   FUNCTION GEN(
     I_OBJ_TYPE_ID                       PLS_INTEGER
-  )RETURN CLOB;
+  ) RETURN CLOB;
+
+  FUNCTION GEN2(
+    I_OBJ_TYPE_ID                       PLS_INTEGER
+  ) RETURN PROTO_TYPE;
 
 END proto_gen#;
 -- Path: .docs/PROTO_GEN#.sql
