@@ -55,6 +55,8 @@ public class ProtobufProcessor {
         String query = getQuery("query2");
         String clobValue = null;
 
+        LOGGER.infof("Getting schema for obj_type_id: %d", objTypeId);
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
