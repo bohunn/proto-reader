@@ -25,4 +25,13 @@ public class EventConsumer {
             schemaRegistryHandler.uploadSchemas();
         }
     }
+
+    @ConsumeEvent(value =  "process-protobufs-with-type", blocking = true)
+    public void processWithType(String message) {
+        protobufProcessor.loadProtoFromDbWithType();
+
+        if (schemaRegistryUploadEnabled) {
+            schemaRegistryHandler.uploadSchemas();
+        }
+    }
 }

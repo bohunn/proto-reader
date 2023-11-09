@@ -18,4 +18,11 @@ public class StartProcessingHandler {
         eventBus.send("process-protobufs", "start");
         context.response().setStatusCode(HttpResponseStatus.OK.code()).end("Processing started");
     }
+
+    @Route(path = "/start-processing-with-type", methods = Route.HttpMethod.GET)
+    public void handleWithType(RoutingContext context) {
+        eventBus.send("process-protobufs-with-type", "start");
+        context.response().setStatusCode(HttpResponseStatus.OK.code()).end("Processing started");
+    }
+
 }

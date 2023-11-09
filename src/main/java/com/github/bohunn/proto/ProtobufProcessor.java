@@ -3,9 +3,13 @@ package com.github.bohunn.proto;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import oracle.jdbc.proxy.annotation.Pre;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
+
+import com.github.bohunn.model.QueryReturnType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -49,6 +53,51 @@ public class ProtobufProcessor {
         } catch (SQLException | IOException e) {
             LOGGER.errorf(e, "Error processing the query");
         }
+    }
+
+    public void loadProtoFromDbWithType() {
+        String query1 = getQuery("query1");
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query1);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            while (resultSet.next()) {
+                int objTypeId = resultSet.getInt("obj_type_id");
+                QueryReturnType queryReturnType = getSchemaWithType(objTypeId);
+                if (queryReturnType.getSchemaClob() != null) {
+                    processRow(objTypeId, queryReturnType.getSchemaClob().getSubString(1, (int) queryReturnType.getSchemaClob().length())); // Pass the schema directly as a string
+                } else {
+                    LOGGER.errorf("Schema not found for obj_type_id: %d", objTypeId);
+                }
+            }
+        } catch (SQLException | IOException e) {
+            LOGGER.errorf(e, "Error processing the query");
+        }        
+    }
+
+    private QueryReturnType getSchemaWithType(int objTypeId) {
+        String query = getQuery("query2");
+        QueryReturnType queryReturnType = new QueryReturnType();
+
+        LOGGER.infof("Getting schema for obj_type_id: %d", objTypeId);
+
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            
+            preparedStatement.setInt(1, objTypeId);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    queryReturnType.setBdeIntlId(resultSet.getString("bde_intl_id"));
+                    queryReturnType.setSchemaClob(resultSet.getClob("clob"));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.errorf(e, "Error processing the query");
+        }
+
+        return queryReturnType;
     }
 
     private String getSchema(int objTypeId) throws SQLException {
