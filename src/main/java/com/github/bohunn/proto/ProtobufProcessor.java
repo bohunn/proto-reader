@@ -94,9 +94,9 @@ public class ProtobufProcessor {
                     StringBuilder row = new StringBuilder();
                     for (int i = 1; i <= columnCount; i++) {
                         String columnName = metaData.getColumnName(i);
-                        String columnValue;
+                        String columnValue;                        
                         if (metaData.getColumnTypeName(i).equals("XMLTYPE")) {
-                            SQLXML sqlxml = resultSet.getSQLXML(i);
+                            SQLXML sqlxml = resultSet.getSQLXML(i);                            
                             columnValue = sqlxml.getString();
                         } else {
                             columnValue = resultSet.getString(i);
