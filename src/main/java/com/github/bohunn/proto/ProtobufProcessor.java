@@ -89,12 +89,14 @@ public class ProtobufProcessor {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
 
-                if (metaData.getColumnCount() > 0) {
-                    LOGGER.infof("Column count: %d", metaData.getColumnCount());
-                    QueryReturnType localQueryType = resultSet.getObject("clob", QueryReturnType.class);
-                    LOGGER.infof("Returned query row: %v", localQueryType); 
-                } else {
-                    LOGGER.infof("Column count: 0");
+                if (resultSet.next()) {
+                    if (metaData.getColumnCount() > 0) {
+                        LOGGER.infof("Column count: %d", metaData.getColumnCount());
+                        QueryReturnType localQueryType = resultSet.getObject("clob", QueryReturnType.class);
+                        LOGGER.infof("Returned query row: %v", localQueryType); 
+                    } else {
+                        LOGGER.infof("Column count: 0");
+                    }
                 }
 
                 // if there are non-null values in the clob column, then the query returns a row
