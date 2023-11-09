@@ -35,4 +35,11 @@ public class QueryReturnType {
         this.schemaClob = schemaClob;
     }
 
+    public String toString() {
+        return "QueryReturnType{" +
+                "bdeIntlId='" + bdeIntlId + '\'' +
+                ", schemaClob='" + schemaClob + '\'' +
+                '}';
+    }
+
 }

@@ -88,29 +88,21 @@ public class ProtobufProcessor {
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
 
-                while (resultSet.next()) {
-                    StringBuilder row = new StringBuilder();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = metaData.getColumnName(i);
-                        String columnValue;                        
-                        if (metaData.getColumnTypeName(i).equals("XMLTYPE")) {
-                            SQLXML sqlxml = resultSet.getSQLXML(i);                            
-                            columnValue = sqlxml.getString();
-                        } else {
-                            columnValue = resultSet.getString(i);
-                        }
-                        row.append(columnName).append(": ").append(columnValue).append(", ");
-                    }
-                    LOGGER.infof("Row: %s", row.toString());
+                if (metaData.getColumnCount() > 0) {
+                    LOGGER.infof("Column count: %d", metaData.getColumnCount());
+                    QueryReturnType localQueryType = resultSet.getObject("clob", QueryReturnType.class);
+                    LOGGER.infof("Returned query row: %v", localQueryType); 
+                } else {
+                    LOGGER.infof("Column count: 0");
                 }
 
-                if (resultSet.next()) {
-                    LOGGER.infof("Query results: %s", resultSet);
-                    queryReturnType.setBdeIntlId(resultSet.getString("bde_intl_id"));
-                    queryReturnType.setSchemaClob(resultSet.getClob("clob"));
-                }
+                // if there are non-null values in the clob column, then the query returns a row
+                // if (resultSet.next()) {
+                    // LOGGER.infof("Query results: %s", resultSet);
+                    // queryReturnType.setBdeIntlId(resultSet.getString("bde_intl_id"));
+                    // queryReturnType.setSchemaClob(resultSet.getClob("clob"));
+                // }
             }
         } catch (SQLException e) {
             LOGGER.errorf(e, "Error processing the query");
