@@ -3,7 +3,6 @@ package com.github.bohunn.proto;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import oracle.jdbc.proxy.annotation.Pre;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -88,7 +87,21 @@ public class ProtobufProcessor {
             preparedStatement.setInt(1, objTypeId);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                int columnCount = metaData.getColumnCount();
+
+                while (resultSet.next()) {
+                    StringBuilder row = new StringBuilder();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String columnName = metaData.getColumnName(i);
+                        String columnValue = resultSet.getString(i);
+                        row.append(columnName).append(": ").append(columnValue).append(", ");
+                    }
+                    LOGGER.infof("Row: %s", row.toString());
+                }
+
                 if (resultSet.next()) {
+                    LOGGER.infof("Query results: %s", resultSet);
                     queryReturnType.setBdeIntlId(resultSet.getString("bde_intl_id"));
                     queryReturnType.setSchemaClob(resultSet.getClob("clob"));
                 }

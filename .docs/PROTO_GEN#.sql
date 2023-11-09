@@ -58,8 +58,18 @@ create or replace PACKAGE BODY proto_gen# IS
     I_OBJ_TYPE_ID                       PLS_INTEGER
   ) RETURN PROTO_TYPE
   IS
+    L_BDE_INTL_ID                                 VARCHAR2(50);
+    L_SCHEMA_CLOB                                 CLOB;    
   BEGIN
-    DBMS_OUTPUT.put_line('test');
+    L_SCHEMA_CLOB := GEN(I_OBJ_TYPE_ID);
+    
+    SELECT CBE.intl_id
+    INTO L_BDE_INTL_ID
+    FROM CODE_BDE_ENTITY CBE
+    WHERE CBE.OBJ_TYPE_ID = I_OBJ_TYPE_ID;
+
+    RETURN PROTO_TYPE(L_BDE_INTL_ID, L_SCHEMA_CLOB);
+
   EXCEPTION
     WHEN OTHERS THEN
       ERR#.RAISE_FA_ERR('gen('||I_OBJ_TYPE_ID||')', BUF#.REMV_TO_CLOB(B_BUF));  
