@@ -3,6 +3,8 @@ package com.github.bohunn.model;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Struct;
+import java.io.IOException;
+import java.io.Reader;
 
 import org.jboss.logging.Logger;
 
@@ -73,7 +75,7 @@ public class QueryReturnType {
                 }
                 clobValue = stringBuilder.toString();
             } catch (IOException e) {
-                throw new SQLException(e);
+                throw new RuntimeException(e);
             }
         }
         return clobValue;
