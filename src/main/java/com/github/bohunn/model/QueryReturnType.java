@@ -27,11 +27,9 @@ public class QueryReturnType {
 
     public QueryReturnType(Struct struct) {    
         try {
-            QueryReturnType queryReturnType = new QueryReturnType();
             Object[] attributes = struct.getAttributes();
             this.bdeIntlId = (String) attributes[0];
             this.schemaClob = (Clob) attributes[1];
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
