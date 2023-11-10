@@ -59,8 +59,6 @@ public class QueryReturnType {
                 '}';
     }
 
-
-
     public String clobToString() {
         String clobValue = null;
         Clob clob = this.schemaClob;
