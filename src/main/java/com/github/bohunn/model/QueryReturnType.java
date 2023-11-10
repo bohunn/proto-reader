@@ -4,7 +4,12 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Struct;
 
+import org.jboss.logging.Logger;
+
 public class QueryReturnType {
+
+    private static final Logger LOGGER = Logger.getLogger(QueryReturnType.class);
+
     
     private String bdeIntlId;
 
@@ -44,7 +49,7 @@ public class QueryReturnType {
                 '}';
     }
 
-    public static QueryReturnType fromStruct(Struct struct) {
+    public static QueryReturnType fromStruct(Struct struct) {    
         try {
             QueryReturnType queryReturnType = new QueryReturnType();
             Object[] attributes = struct.getAttributes();
