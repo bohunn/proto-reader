@@ -76,6 +76,8 @@ public class QueryReturnType {
                 clobValue = stringBuilder.toString();
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
         }
         return clobValue;
