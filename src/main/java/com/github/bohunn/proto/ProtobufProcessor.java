@@ -99,18 +99,12 @@ public class ProtobufProcessor {
                             QueryReturnType localQueryType = QueryReturnType.fromStruct(struct);
                             // QueryReturnType localQueryType = resultSet.getObject("clob", Object.class);
                             LOGGER.infof("Returned query row: %s", localQueryType); 
+                            return localQueryType;
                         }
                     } else {
                         LOGGER.infof("Column count: 0");
                     }
                 }
-
-                // if there are non-null values in the clob column, then the query returns a row
-                // if (resultSet.next()) {
-                    // LOGGER.infof("Query results: %s", resultSet);
-                    // queryReturnType.setBdeIntlId(resultSet.getString("bde_intl_id"));
-                    // queryReturnType.setSchemaClob(resultSet.getClob("clob"));
-                // }
             }
         } catch (SQLException e) {
             LOGGER.errorf(e, "Error processing the query");
@@ -153,7 +147,15 @@ public class ProtobufProcessor {
         return clobValue;
     }
 
-    private void processRow(int objType, String schema) throws IOException {
+    private void processRow(QueryReturnType entity) {
+        processRow(entity.getObjTypeId(), entity.schemaToString());        
+    }
+
+    private void processRow(int objType, String schema) {
+        processRow(String.valueOf(objType), schema);
+    }
+
+    private void processRow(String objType, String schema) throws IOException {
         String tempDirectory;
         if (System.getProperty("os.name").startsWith("Windows")) {
             tempDirectory = System.getProperty("user.dir");

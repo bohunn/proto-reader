@@ -62,4 +62,24 @@ public class QueryReturnType {
         }
     }
 
+    public String clobToString() {
+        String clobValue = null;
+        Clob clob = this.schemaClob;
+
+        if (clob != null) {
+            try (Reader reader = clob.getCharacterStream()) {
+                StringBuilder stringBuilder = new StringBuilder();
+                char[] buffer = new char[1024];
+                int bytesRead;
+                while ((bytesRead = reader.read(buffer)) != -1) {
+                    stringBuilder.append(buffer, 0, bytesRead);
+                }
+                clobValue = stringBuilder.toString();
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+        }
+        return clobValue;
+    }
+
 }
