@@ -147,7 +147,7 @@ public class ProtobufProcessor {
     }
 
     private void processRow(QueryReturnType entity) {
-        processRow(entity.getObjTypeId(), entity.clobToString());        
+        processRow(entity.getBdeIntlId(), entity.clobToString());        
     }
 
     private void processRow(int objType, String schema) {
