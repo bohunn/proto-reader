@@ -94,7 +94,7 @@ public class ProtobufProcessor {
                         LOGGER.infof("Column count: %d", metaData.getColumnCount());
                         LOGGER.infof("Column name: %s, column type: %d", metaData.getColumnName(1), metaData.getColumnType(1));
                         Struct struct = resultSet.getObject("CLOB", Struct.class);
-                        LOGGER.infof("Struct: %v", struct);
+                        LOGGER.infof("Struct: %s", struct);
                         if (struct != null) {
                             QueryReturnType localQueryType = QueryReturnType.fromStruct(struct);
                             // QueryReturnType localQueryType = resultSet.getObject("clob", Object.class);
