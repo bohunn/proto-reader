@@ -96,8 +96,7 @@ public class ProtobufProcessor {
                         Struct struct = resultSet.getObject("CLOB", Struct.class);
                         LOGGER.infof("Struct: %s", struct);
                         if (struct != null) {
-                            QueryReturnType localQueryType = QueryReturnType.fromStruct(struct);
-                            // QueryReturnType localQueryType = resultSet.getObject("clob", Object.class);
+                            QueryReturnType localQueryType = new QueryReturnType(struct);
                             LOGGER.infof("Returned query row: %s", localQueryType); 
                             return localQueryType;
                         }

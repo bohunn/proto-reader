@@ -25,6 +25,18 @@ public class QueryReturnType {
         this.schemaClob = null;
     }
 
+    public QueryReturnType(Struct struct) {    
+        try {
+            QueryReturnType queryReturnType = new QueryReturnType();
+            Object[] attributes = struct.getAttributes();
+            this.bdeIntlId = (String) attributes[0];
+            this.schemaClob = (Clob) attributes[1];
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // getters and setters    
     public String getBdeIntlId() {
         return bdeIntlId;
@@ -49,18 +61,7 @@ public class QueryReturnType {
                 '}';
     }
 
-    public static QueryReturnType fromStruct(Struct struct) {    
-        try {
-            QueryReturnType queryReturnType = new QueryReturnType();
-            Object[] attributes = struct.getAttributes();
-            queryReturnType.setBdeIntlId((String) attributes[0]);
-            queryReturnType.setSchemaClob((Clob) attributes[1]);
 
-            return queryReturnType;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public String clobToString() {
         String clobValue = null;
