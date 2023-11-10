@@ -1,6 +1,8 @@
 package com.github.bohunn.model;
 
 import java.sql.Clob;
+import java.sql.SQLException;
+import java.sql.Struct;
 
 public class QueryReturnType {
     
@@ -40,6 +42,19 @@ public class QueryReturnType {
                 "bdeIntlId='" + bdeIntlId + '\'' +
                 ", schemaClob='" + schemaClob + '\'' +
                 '}';
+    }
+
+    public static QueryReturnType fromStruct(Struct struct) {
+        try {
+            QueryReturnType queryReturnType = new QueryReturnType();
+            Object[] attributes = struct.getAttributes();
+            queryReturnType.setBdeIntlId((String) attributes[0]);
+            queryReturnType.setSchemaClob((Clob) attributes[1]);
+
+            return queryReturnType;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
