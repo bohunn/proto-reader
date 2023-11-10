@@ -10,9 +10,6 @@ import org.jboss.logging.Logger;
 
 public class QueryReturnType {
 
-    private static final Logger LOGGER = Logger.getLogger(QueryReturnType.class);
-
-    
     private String bdeIntlId;
 
     private Clob schemaClob;

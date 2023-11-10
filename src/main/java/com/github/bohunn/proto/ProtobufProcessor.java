@@ -33,7 +33,7 @@ public class ProtobufProcessor {
         return config.getValue(dbType + ".sql." + queryName, String.class);
     }
 
-    public void loadProtoFromDb() {
+    public void loadProtoFromDb() throws IOException {
         String query1 = getQuery("query1");
 
         try (Connection connection = dataSource.getConnection();
@@ -49,12 +49,12 @@ public class ProtobufProcessor {
                     LOGGER.errorf("Schema not found for obj_type_id: %d", objTypeId);
                 }
             }
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             LOGGER.errorf(e, "Error processing the query");
         }
     }
 
-    public void loadProtoFromDbWithType() {
+    public void loadProtoFromDbWithType() throws IOException {
         String query1 = getQuery("query1");
 
         try (Connection connection = dataSource.getConnection();
@@ -65,12 +65,12 @@ public class ProtobufProcessor {
                 int objTypeId = resultSet.getInt("obj_type_id");
                 QueryReturnType queryReturnType = getSchemaWithType(objTypeId);
                 if (queryReturnType.getSchemaClob() != null) {
-                    processRow(objTypeId, queryReturnType.getSchemaClob().getSubString(1, (int) queryReturnType.getSchemaClob().length())); // Pass the schema directly as a string
+                    processRow(queryReturnType); // Pass the schema as a QueryReturnType object
                 } else {
                     LOGGER.errorf("Schema not found for obj_type_id: %d", objTypeId);
                 }
             }
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             LOGGER.errorf(e, "Error processing the query");
         }        
     }
@@ -146,11 +146,11 @@ public class ProtobufProcessor {
         return clobValue;
     }
 
-    private void processRow(QueryReturnType entity) {
+    private void processRow(QueryReturnType entity) throws IOException {
         processRow(entity.getBdeIntlId(), entity.clobToString());        
     }
 
-    private void processRow(int objType, String schema) {
+    private void processRow(int objType, String schema) throws IOException {
         processRow(String.valueOf(objType), schema);
     }
 
