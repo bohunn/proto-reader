@@ -92,7 +92,7 @@ public class ProtobufProcessor {
                 if (resultSet.next()) {
                     if (metaData.getColumnCount() > 0) {
                         LOGGER.infof("Column count: %d", metaData.getColumnCount());
-                        LOGGER.infof("Column name: %s, column type: %d", metaData.getColumnName(1), metaData.getColumnType(objTypeId));
+                        LOGGER.infof("Column name: %s, column type: %d", metaData.getColumnName(1), metaData.getColumnType(1));
                         QueryReturnType localQueryType = resultSet.getObject("clob", QueryReturnType.class);
                         LOGGER.infof("Returned query row: %v", localQueryType); 
                     } else {
