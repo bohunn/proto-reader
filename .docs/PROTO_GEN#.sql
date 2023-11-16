@@ -70,9 +70,9 @@ create or replace PACKAGE BODY proto_gen# IS
 
     RETURN PROTO_TYPE(L_BDE_INTL_ID, L_SCHEMA_CLOB);
 
-  EXCEPTION
-    WHEN OTHERS THEN
-      ERR#.RAISE_FA_ERR('gen('||I_OBJ_TYPE_ID||')', BUF#.REMV_TO_CLOB(B_BUF));  
+  --EXCEPTION
+   --WHEN OTHERS THEN
+     --ERR#.RAISE_FA_ERR('gen('||I_OBJ_TYPE_ID||')', BUF#.REMV_TO_CLOB(B_BUF));  
   END GEN2;
 
 
