@@ -14,6 +14,18 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class PackagingProcessor {
     
     public void createJarFromPackages(Path inputFolder, Path outputJar) throws IOException {
+        // check if input folder exists
+        if (!Files.exists(inputFolder)) {
+            throw new IllegalArgumentException("Input folder does not exist: " + inputFolder);
+        }
+
+        // check if output folder exists
+        if (!Files.exists(outputJar.getParent())) {
+            // if not then create it
+            Files.createDirectories(outputJar.getParent());
+        }
+        
+        // create JAR file
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(outputJar.toFile()))) {
             Files.walk(inputFolder)
                 .filter(Files::isRegularFile)
@@ -21,6 +33,7 @@ public class PackagingProcessor {
         }
     }
 
+    // add file to JAR
     private void addFileToJar(JarOutputStream jos, Path path) {
         try (FileInputStream fis = new FileInputStream(path.toFile())) {
             JarEntry entry = new JarEntry(path.toString());

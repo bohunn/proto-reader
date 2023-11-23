@@ -51,12 +51,14 @@ public class ProtobufProcessor {
         }
     }
 
+    // get query from the configuration file
     private String getQuery(String queryName) {
         Config config = ConfigProvider.getConfig();
         String dbType = config.getValue("db.type", String.class);
         return config.getValue(dbType + ".sql." + queryName, String.class);
     }
 
+    // load proto files from the database
     public void loadProtoFromDbWithType() throws IOException {
         String query1 = getQuery("query1");
 
@@ -157,7 +159,7 @@ public class ProtobufProcessor {
 
     // method to run protoc command
     private void generateJavaClass(Path protoPath, Path javaPath, String fileName) {
-                try {
+        try {
             LOGGER.infof("Creating a Java class...");
             Process p = new ProcessBuilder("protoc", "-I=" + protoPath, "--java_out=" + javaPath, fileName).start();
 
