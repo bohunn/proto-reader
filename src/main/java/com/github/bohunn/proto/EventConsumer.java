@@ -20,15 +20,6 @@ public class EventConsumer {
     @Inject
     SchemaRegistryHandler schemaRegistryHandler;
 
-    @ConsumeEvent(value = "process-protobufs", blocking = true)
-    public void process(String message) throws IOException {
-        protobufProcessor.loadProtoFromDb();
-
-        if (schemaRegistryUploadEnabled) {
-            schemaRegistryHandler.uploadSchemas();
-        }
-    }
-
     @ConsumeEvent(value =  "process-protobufs-with-type", blocking = true)
     public void processWithType(String message) throws IOException {
         protobufProcessor.loadProtoFromDbWithType();

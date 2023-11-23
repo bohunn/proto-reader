@@ -6,8 +6,7 @@ import java.sql.Struct;
 import java.io.IOException;
 import java.io.Reader;
 
-import org.jboss.logging.Logger;
-
+// Corresponds to ./docs/type.sql
 public class QueryReturnType {
 
     private String bdeIntlId;

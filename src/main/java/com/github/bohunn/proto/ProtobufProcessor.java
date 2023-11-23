@@ -13,11 +13,11 @@ import com.github.bohunn.model.QueryReturnType;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.List;
 
 @ApplicationScoped
 public class ProtobufProcessor {
@@ -25,33 +25,36 @@ public class ProtobufProcessor {
     @Inject
     AgroalDataSource dataSource;
 
+    @Inject
+    PackagingProcessor packagingProcessor;
+
     private static final Logger LOGGER = Logger.getLogger(ProtobufProcessor.class);
+
+    private Path tempDirPath;
+
+    private Path tempJavaPath;
+
+    private Path jarOutputPath;
+
+    private List<String> helperProtoFiles = List.of("options.proto", "wrappers.proto", "meta_model.proto");
+
+    public ProtobufProcessor() {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            String userDir = System.getProperty("user.dir");
+            this.tempDirPath = Paths.get(userDir, "temp").toAbsolutePath();
+            this.tempJavaPath = Paths.get(userDir, "temp", "model").toAbsolutePath();
+            this.jarOutputPath = Paths.get(userDir, "temp", "output_package", "proto.jar").toAbsolutePath();
+        } else {
+            this.tempDirPath = Paths.get("/", "temp").toAbsolutePath();
+            this.tempJavaPath = Paths.get("/", "temp", "model").toAbsolutePath();
+            this.jarOutputPath = Paths.get("/", "temp", "output_package", "proto.jar").toAbsolutePath();
+        }
+    }
 
     private String getQuery(String queryName) {
         Config config = ConfigProvider.getConfig();
         String dbType = config.getValue("db.type", String.class);
         return config.getValue(dbType + ".sql." + queryName, String.class);
-    }
-
-    public void loadProtoFromDb() throws IOException {
-        String query1 = getQuery("query1");
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query1);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            while (resultSet.next()) {
-                int objTypeId = resultSet.getInt("obj_type_id");
-                String schema = getSchema(objTypeId);
-                if (schema != null) {
-                    processRow(objTypeId, schema); // Pass the schema directly as a string
-                } else {
-                    LOGGER.errorf("Schema not found for obj_type_id: %d", objTypeId);
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.errorf(e, "Error processing the query");
-        }
     }
 
     public void loadProtoFromDbWithType() throws IOException {
@@ -70,11 +73,23 @@ public class ProtobufProcessor {
                     LOGGER.errorf("Schema not found for obj_type_id: %d", objTypeId);
                 }
             }
+
         } catch (SQLException e) {
             LOGGER.errorf(e, "Error processing the query");
-        }        
+        }   
+
+        // create a java class for options, wrappers and meta_model proto files
+        for (String protoFileName : helperProtoFiles) {
+            generateJavaClass(tempDirPath, tempJavaPath, protoFileName);
+        }
+
+        // create a jar file from the generated Java classes
+        packagingProcessor.createJarFromPackages(tempJavaPath, jarOutputPath); 
+
     }
 
+    // get schema from the database - custom SQL type
+    // see ./docs/type.sql
     private QueryReturnType getSchemaWithType(int objTypeId) {
         String query = getQuery("query2");
         QueryReturnType queryReturnType = new QueryReturnType();
@@ -91,10 +106,7 @@ public class ProtobufProcessor {
 
                 if (resultSet.next()) {
                     if (metaData.getColumnCount() > 0) {
-                        LOGGER.infof("Column count: %d", metaData.getColumnCount());
-                        LOGGER.infof("Column name: %s, column type: %d", metaData.getColumnName(1), metaData.getColumnType(1));
                         Struct struct = resultSet.getObject("CLOB", Struct.class);
-                        LOGGER.infof("Struct: %s", struct);
                         if (struct != null) {
                             QueryReturnType localQueryType = new QueryReturnType(struct);
                             LOGGER.infof("Returned query row: %s", localQueryType); 
@@ -112,48 +124,13 @@ public class ProtobufProcessor {
         return queryReturnType;
     }
 
-    private String getSchema(int objTypeId) throws SQLException {
-        String query = getQuery("query2");
-        String clobValue = null;
-
-        LOGGER.infof("Getting schema for obj_type_id: %d", objTypeId);
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-
-            preparedStatement.setInt(1, objTypeId);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    Clob clob = resultSet.getClob("clob");
-                    if (clob != null) {
-                        try (Reader reader = clob.getCharacterStream()) {
-                            StringBuilder stringBuilder = new StringBuilder();
-                            char[] buffer = new char[1024];
-                            int bytesRead;
-                            while ((bytesRead = reader.read(buffer)) != -1) {
-                                stringBuilder.append(buffer, 0, bytesRead);
-                            }
-                            clobValue = stringBuilder.toString();
-                        } catch (IOException e) {
-                            throw new SQLException(e);
-                        }
-                    }
-                }
-            }
-        }
-
-        return clobValue;
-    }
-
+    // process a row from the query result set - custom SQL type
     private void processRow(QueryReturnType entity) throws IOException {
         processRow(entity.getBdeIntlId(), entity.clobToString());        
     }
 
-    private void processRow(int objType, String schema) throws IOException {
-        processRow(String.valueOf(objType), schema);
-    }
-
+    // process a row from the query result set - single usage
+    // !!! remember objType is the name of the .proto file !!!
     private void processRow(String objType, String schema) throws IOException {
         String tempDirectory;
         if (System.getProperty("os.name").startsWith("Windows")) {
@@ -169,24 +146,20 @@ public class ProtobufProcessor {
 
         Files.writeString(protoFilePath, schema);
 
-        Path tempDirPath;
-        Path tempJavaPath;
         String protoFileName = protoFilePath.getFileName().toString();
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            // In Windows, replace the backslashes in the path string with forward slashes for protoc
-            tempDirPath = Paths.get(protoFilePath.getParent().toString().replace("\\", "/")).toAbsolutePath();
-            tempJavaPath = Paths.get(protoFilePath.getParent().toString().replace("\\", "/"), "model").toAbsolutePath();
-        } else {
-            // In Unix-based systems, just use the path as is
-            tempDirPath = protoFilePath.getParent().toAbsolutePath();
-            tempJavaPath = Paths.get(protoFilePath.getParent().toString(), "model").toAbsolutePath();
-        }
+
         // create a model directory for the generated Java class
         Files.createDirectories(tempJavaPath);
 
-        try {
+        // run protoc for the .proto file
+        generateJavaClass(tempDirPath, tempJavaPath, protoFileName);
+    }
+
+    // method to run protoc command
+    private void generateJavaClass(Path protoPath, Path javaPath, String fileName) {
+                try {
             LOGGER.infof("Creating a Java class...");
-            Process p = new ProcessBuilder("protoc", "-I=" + tempDirPath, "--java_out=" + tempJavaPath, protoFileName).start();
+            Process p = new ProcessBuilder("protoc", "-I=" + protoPath, "--java_out=" + javaPath, fileName).start();
 
             try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
                  BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
@@ -207,30 +180,4 @@ public class ProtobufProcessor {
         }
     }
 
-    // method to move meta_model.proto and options.proto from resources folder to model folder
-    public void moveProtoFiles() throws IOException {
-        String tempDirectory;
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            tempDirectory = System.getProperty("user.dir");
-        } else {
-            tempDirectory = "/";
-        }
-
-        Path protoFilePath = Paths.get(tempDirectory, "temp", "meta_model.proto");
-        Path protoFilePath2 = Paths.get(tempDirectory, "temp", "options.proto");
-        Path tempJavaPath;
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            // In Windows, replace the backslashes in the path string with forward slashes for protoc
-            tempJavaPath = Paths.get(protoFilePath.getParent().toString().replace("\\", "/"), "model").toAbsolutePath();
-        } else {
-            // In Unix-based systems, just use the path as is
-            tempJavaPath = Paths.get(protoFilePath.getParent().toString(), "model").toAbsolutePath();
-        }
-        // create a model directory for the generated Java class
-        Files.createDirectories(tempJavaPath);
-
-        LOGGER.infof("Moving meta_model.proto and options.proto to model folder...");
-        Files.move(protoFilePath, Paths.get(tempJavaPath.toString(), "meta_model.proto"));
-        Files.move(protoFilePath2, Paths.get(tempJavaPath.toString(), "options.proto"));
-    }
 }
