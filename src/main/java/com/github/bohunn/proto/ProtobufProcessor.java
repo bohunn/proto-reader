@@ -160,7 +160,7 @@ public class ProtobufProcessor {
     // method to run protoc command
     private void generateJavaClass(Path protoPath, Path javaPath, String fileName) {
         try {
-            LOGGER.infof("Creating a Java class...");
+            LOGGER.infof("Creating a Java class for: %s", fileName);
             Process p = new ProcessBuilder("protoc", "-I=" + protoPath, "--java_out=" + javaPath, fileName).start();
 
             try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));

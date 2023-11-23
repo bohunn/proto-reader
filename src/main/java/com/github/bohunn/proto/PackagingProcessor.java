@@ -8,10 +8,14 @@ import java.nio.file.Path;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
+import org.jboss.logging.Logger;
+
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class PackagingProcessor {
+
+    private static final Logger LOGGER = Logger.getLogger(PackagingProcessor.class);
     
     public void createJarFromPackages(Path inputFolder, Path outputJar) throws IOException {
         // check if input folder exists
@@ -35,6 +39,9 @@ public class PackagingProcessor {
 
     // add file to JAR
     private void addFileToJar(JarOutputStream jos, Path path) {
+
+        LOGGER.infof("Generating JAR File in: %s", path);
+        
         try (FileInputStream fis = new FileInputStream(path.toFile())) {
             JarEntry entry = new JarEntry(path.toString());
             jos.putNextEntry(entry);
