@@ -42,11 +42,11 @@ public class ProtobufProcessor {
         if (System.getProperty("os.name").startsWith("Windows")) {
             String userDir = System.getProperty("user.dir");
             this.tempDirPath = Paths.get(userDir, "temp").toAbsolutePath();
-            this.tempJavaPath = Paths.get(userDir, "temp", "model").toAbsolutePath();
+            this.tempJavaPath = Paths.get(userDir, "temp", "src/main/java").toAbsolutePath();
             this.jarOutputPath = Paths.get(userDir, "temp", "output_package", "proto.jar").toAbsolutePath();
         } else {
             this.tempDirPath = Paths.get("/", "temp").toAbsolutePath();
-            this.tempJavaPath = Paths.get("/", "temp", "model").toAbsolutePath();
+            this.tempJavaPath = Paths.get("/", "temp", "src/main/java").toAbsolutePath();
             this.jarOutputPath = Paths.get("/", "temp", "output_package", "proto.jar").toAbsolutePath();
         }
     }
