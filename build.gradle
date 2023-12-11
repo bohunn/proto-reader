@@ -12,7 +12,6 @@ dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
     implementation 'io.quarkus:quarkus-arc'
     implementation("io.quarkus:quarkus-reactive-routes:${quarkusPlatformVersion}")
-    implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-jdbc-oracle")
     implementation("io.quarkus:quarkus-agroal:${quarkusPlatformVersion}")
     implementation("io.quarkus:quarkus-resteasy-reactive")
@@ -20,6 +19,7 @@ dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:5.9.0.202009080501-r")
     implementation("com.oracle.database.jdbc:ojdbc8:19.8.0.0")
     testImplementation 'io.quarkus:quarkus-junit5'
+    testImplementation("org.testcontainers:oracle-xe:1.18.3")
 }
 
 group 'com.github'

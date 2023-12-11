@@ -1,0 +1,133 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://tkb.artifactory.bitbeam.swisscom.com/artifactory/libs-release"
+        }
+        maven {
+            url "https://tkb.artifactory.bitbeam.swisscom.com/artifactory/libs-release-local"
+        }
+
+    }
+    dependencies {
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
+//        classpath "com.google.protobuf:protobuf-gradle-plugin:0.9.4"
+    }
+}
+
+repositories {
+    maven {
+        url "https://tkb.artifactory.bitbeam.swisscom.com/artifactory/libs-release"
+    }
+    maven {
+        url "https://tkb.artifactory.bitbeam.swisscom.com/artifactory/libs-release-local"
+    }
+    maven {
+        url "https://tkb.artifactory.bitbeam.swisscom.com/artifactory/confluent"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'war'
+apply plugin: 'maven-publish'
+apply plugin: "base"
+apply plugin: "distribution"
+apply plugin: "com.jfrog.artifactory"
+//apply plugin: 'com.google.protobuf'
+
+group 'ch.tkb'
+version '1.0.0'
+
+dependencies {
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.25.1'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.25.1'
+    implementation group: 'com.google.protobuf', name: 'protoc', version: '3.25.1', ext: 'pom'
+
+}
+
+task modelJar(type: Jar) {
+    //from sourceSets.main.allJava
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.contains('XXXjacksonXXX') }.collect { zipTree(it) }  // soll KEINE Libs selektieren
+    }
+
+}
+
+artifactoryPublish {
+    // publications.removeAll() //<- putting this here doesn't work
+    // publications.remove('mavenJava') //<- neither does this
+    publications ('publishModel') //<- this adds mavenSrc to the publication list but does not remove the mavenJava publication from it
+}
+
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = 'libs-release-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+
+        }
+        defaults {
+            publications ('mavenJava')
+            publishArtifacts = true
+            publishBuildInfo = true
+            publishPom = true
+        }
+    }
+    resolve {
+        repository {
+            repoKey = 'libs-release-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+
+        }
+    }
+
+}
+
+publishing {
+    repositories {
+        maven {
+            credentials {
+                username = "${artifactory_user}"
+                password = "${artifactory_password}"
+            }
+            url = "${artifactory_contextUrl}/libs-release-local"
+
+        }
+    }
+    publications {
+        publishModel(MavenPublication) {
+            groupId 'ch.tkb.dms'
+            artifactId 'proto-avq-model'
+            version version
+            artifact modelJar
+        }
+    }
+}
+
+//protobuf {
+//    protoc {
+//        artifact = 'com.google.protobuf:protoc:3.25.1'
+//    }
+//    // set output directory for generated java files
+//    generatedFilesBaseDir = "$projectDir/src/"
+//}
+//
+//sourceSets {
+//    main {
+//        proto {
+//            srcDir 'src/main/proto'
+//        }
+//        java {
+//            srcDirs 'src/main/java', "${project.buildDir}/generated/source/proto/main/java"
+//        }
+//    }
+//}
+
+artifactoryPublish.dependsOn('modelJar')

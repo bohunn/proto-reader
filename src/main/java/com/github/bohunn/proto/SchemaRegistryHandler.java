@@ -29,6 +29,8 @@ public class SchemaRegistryHandler {
 
     public void uploadSchemas() {
         if (schemaRegistryUploadEnabled) {
+            // checkProtoSchemasSubjects();
+            
             String tempDirectory;
             if (System.getProperty("os.name").startsWith("Windows")) {
                 tempDirectory = System.getProperty("user.dir");
@@ -47,6 +49,8 @@ public class SchemaRegistryHandler {
                             .forEach(p -> {
                                 try {
                                     String schema = Files.readString(p);
+                                    // call method that will include wrappers.proto in schema
+                                    schema = includeWrappersProto(schema);
                                     JsonObject schemaJson = Json.createObjectBuilder()
                                             .add("schema", schema)
                                             .add("schemaType", "PROTOBUF")
@@ -60,14 +64,52 @@ public class SchemaRegistryHandler {
 
                                     System.out.println("Registry response: " + response);
                                 } catch (IOException e) {
-                                    // handle or log exception
+                                   LOGGER.errorf(e, "Error uploading schema"); 
                                 }
                             });
                 }
             } catch (IOException e) {
-                // handle or log exception
+                LOGGER.errorf(e, "Error creating temp directory");
+            } finally {
+                client.close();
             }
         }
+    }
+
+    public String includeWrappersProto(String schema) {
+        // method to include wrappers.proto in the schema
+        String tempDirectory;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            tempDirectory = System.getProperty("user.dir");
+        } else {
+            tempDirectory = "/";
+        }
+
+        Path tempPath = Paths.get(tempDirectory, "temp");
+
+        // read wrappers.proto file
+        Path wrappersProtoPath = Paths.get(tempPath.toString(), "wrappers.proto");
+        String wrappersProto = "";
+        try {
+            wrappersProto = Files.readString(wrappersProtoPath);
+        } catch (IOException e) {
+            LOGGER.errorf(e, "Error reading wrappers.proto file");
+        }
+
+        // read only messages from wrappers.proto schema
+        String[] wrappersProtoMessages = wrappersProto.split("message");
+        
+        // include them include them in the schema
+        for (String message : wrappersProtoMessages) {
+            if (!message.isBlank()) {
+                // remove the last } from the message
+                message = message.substring(0, message.length() - 1);
+                // add the message to the schema
+                schema = schema + message + "\n}";
+            }
+        }
+
+        return schema;
     }
 
 }
