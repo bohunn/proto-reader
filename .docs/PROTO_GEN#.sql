@@ -8,7 +8,7 @@ create or replace PACKAGE proto_gen# IS
   
   
 --+------------------------------------------------------------------------+
-  PROCEDURE FILL_META_VERSION_SCHEMA();
+  PROCEDURE FILL_META_VERSION_SCHEMA;
 
   FUNCTION GEN(
     I_OBJ_TYPE_ID                       PLS_INTEGER
