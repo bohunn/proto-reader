@@ -69,6 +69,7 @@ public class ProtobufProcessor {
             while (resultSet.next()) {
                 Integer objTypeId = (resultSet.getObject("obj_type_id") != null) ? resultSet.getInt("obj_type_id") : null;
                 Integer metaTypId = (resultSet.getObject("meta_typ_id") != null) ? resultSet.getInt("meta_typ_id") : null;
+                LOGGER.printf("returned: obj_type_id: %d, meta_typ_id: %d");
                 QueryReturnType queryReturnType = getSchemaWithType(objTypeId, metaTypId);
                 if (queryReturnType.getSchemaClob() != null) {
                     processRow(queryReturnType); // Pass the schema as a QueryReturnType object
@@ -153,10 +154,10 @@ public class ProtobufProcessor {
         String protoFileName = protoFilePath.getFileName().toString();
 
         // create a model directory for the generated Java class
-        Files.createDirectories(tempJavaPath);
+        // Files.createDirectories(tempJavaPath);
 
         // run protoc for the .proto file
-        generateJavaClass(tempDirPath, tempJavaPath, protoFileName);
+        // generateJavaClass(tempDirPath, tempJavaPath, protoFileName);
     }
 
     // method to run protoc command
