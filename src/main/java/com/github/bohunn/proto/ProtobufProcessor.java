@@ -68,7 +68,8 @@ public class ProtobufProcessor {
 
             while (resultSet.next()) {
                 int objTypeId = resultSet.getInt("obj_type_id");
-                QueryReturnType queryReturnType = getSchemaWithType(objTypeId);
+                int metaTypId = resultSet.getInt("meta_typ_id");
+                QueryReturnType queryReturnType = getSchemaWithType(objTypeId, metaTypId);
                 if (queryReturnType.getSchemaClob() != null) {
                     processRow(queryReturnType); // Pass the schema as a QueryReturnType object
                 } else {
@@ -92,16 +93,17 @@ public class ProtobufProcessor {
 
     // get schema from the database - custom SQL type
     // see ./docs/type.sql
-    private QueryReturnType getSchemaWithType(int objTypeId) {
+    private QueryReturnType getSchemaWithType(int objTypeId, int metaTypId) {
         String query = getQuery("query2");
         QueryReturnType queryReturnType = new QueryReturnType();
 
-        LOGGER.infof("Getting schema for obj_type_id: %d", objTypeId);
+        LOGGER.infof("Getting schema for obj_type_id: %d, meta_typ_id: %d", objTypeId, metaTypId);
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             
             preparedStatement.setInt(1, objTypeId);
+            preparedStatement.setInt(2, metaTypId);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
