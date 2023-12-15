@@ -69,7 +69,9 @@ public class ProtobufProcessor {
             while (resultSet.next()) {
                 Integer objTypeId = (resultSet.getObject("obj_type_id") != null) ? resultSet.getInt("obj_type_id") : null;
                 Integer metaTypId = (resultSet.getObject("meta_typ_id") != null) ? resultSet.getInt("meta_typ_id") : null;
-                LOGGER.printf("returned: obj_type_id: %d, meta_typ_id: %d", objTypeId, metaTypId);
+
+                LOGGER.infof("returned: obj_type_id: %d, meta_typ_id: %d", objTypeId, metaTypId);
+
                 QueryReturnType queryReturnType = getSchemaWithType(objTypeId, metaTypId);
                 if (queryReturnType.getSchemaClob() != null) {
                     processRow(queryReturnType); // Pass the schema as a QueryReturnType object
